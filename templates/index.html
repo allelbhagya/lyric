@@ -1,0 +1,59 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lyric Generator</title>
+</head>
+<body>
+    <h1>Lyric Generator</h1>
+    <form id="artistForm">
+        <label for="artist">Select an artist:</label>
+        <select name="artist" id="artist"></select>
+        <button type="submit">Generate Lyrics</button>
+    </form>
+    <div id="generatedLyrics"></div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const artistForm = document.getElementById('artistForm');
+            const artistSelect = document.getElementById('artist');
+            const generatedLyricsDiv = document.getElementById('generatedLyrics');
+
+            // Fetch the list of artists
+            fetch('/artists')
+                .then(response => response.json())
+                .then(data => {
+                    data.artists.forEach(artist => {
+                        const option = document.createElement('option');
+                        option.value = artist;
+                        option.textContent = artist;
+                        artistSelect.appendChild(option);
+                    });
+                });
+
+            // Handle form submission
+            artistForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const selectedArtist = artistSelect.value;
+
+                // Call the /generate-lyrics route with the selected artist
+                fetch('/generate-lyrics', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({ artist: selectedArtist }),
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Display the generated lyrics
+                        generatedLyricsDiv.innerHTML = data.generated_lyrics.join('<br>');
+                    })
+                    .catch(error => console.error('Error:', error));
+            });
+        });
+    </script>
+</body>
+</html>
