@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request
 import os
 import pandas as pd
 import random
@@ -9,7 +9,6 @@ def load_lyrics(csv_file):
     df = pd.read_csv(csv_file)
     lyrics_data = df[['Title', 'Lyric']].dropna()
     return lyrics_data
-
 def build_markov_chain(lyrics_data):
     markov_chain = {}
 
@@ -27,7 +26,6 @@ def build_markov_chain(lyrics_data):
             markov_chain[current_word].append(next_word)
 
     return markov_chain
-
 def generate_lyrics(markov_chain, num_lines=5):
     generated_lyrics = []
 
@@ -35,7 +33,7 @@ def generate_lyrics(markov_chain, num_lines=5):
         current_word = random.choice(list(markov_chain.keys()))
         line = [current_word]
 
-        for _ in range(10):  # Set a limit to avoid infinite loops
+        for _ in range(10): 
             next_word = random.choice(markov_chain.get(current_word, ['']))
             if next_word:
                 line.append(next_word)
@@ -46,35 +44,20 @@ def generate_lyrics(markov_chain, num_lines=5):
         generated_lyrics.append(' '.join(line))
 
     return generated_lyrics
-
 @app.route('/')
 def index():
+    # Display a form to select an artist
     return render_template('index.html')
 
-
-@app.route('/generate-lyrics', methods=['POST'])
-def generate_lyrics_route():
-    artist = request.form.get('artist')
-
-    artist_folder = 'D:\code\lyrics\music\db'  # Replace with the actual path
-    selected_csv = os.path.join(artist_folder, f'{artist}.csv')
-
-    # Check if the file exists before attempting to read it
-    if os.path.exists(selected_csv):
-        lyrics_data = load_lyrics(selected_csv)
-        markov_chain = build_markov_chain(lyrics_data)
-        generated_lyrics = generate_lyrics(markov_chain)
-        return jsonify({'generated_lyrics': generated_lyrics})
-    else:
-        return jsonify({'error': 'Selected artist CSV file not found'})
-
-
-@app.route('/artists')
-def get_artists():
-    artist_folder = 'D:\code\lyrics\music\db'  # Replace with the actual path
-    artists = [folder for folder in os.listdir(artist_folder) if os.path.isdir(os.path.join(artist_folder, folder))]
-    print('Artists:', artists)  # Add this line for debugging
-    return jsonify({'artists': artists})
+@app.route('/generate', methods=['POST'])
+def generate():
+    # Handle form submission and generate lyrics
+    selected_artist = request.form.get('artist')
+    selected_csv = f'../lyric/music/db/{selected_artist}.csv'
+    lyrics_data = load_lyrics(selected_csv)
+    markov_chain = build_markov_chain(lyrics_data)
+    generated_lyrics = generate_lyrics(markov_chain)
+    return render_template('generate.html', lyrics=generated_lyrics)
 
 if __name__ == '__main__':
     app.run(debug=True)
